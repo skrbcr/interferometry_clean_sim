@@ -1,2 +1,4 @@
-# interferometry_clean_sim
+# Interferometry CLEAN Simulation
+
 Simulation of CLEAN algorithm of interferometry
+
