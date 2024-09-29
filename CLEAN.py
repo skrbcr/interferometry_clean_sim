@@ -11,6 +11,7 @@ class CLEAN:
         self.uv_coverage = None
         self.uv_grid = None
 
+
     def set_antenna_array(self, geometry, n_antennas, b_min=None, b_max=None, random_seed=0):
         """
         geometry (str): 'random'
@@ -38,43 +39,24 @@ class CLEAN:
                 v = self.pos_antennas[i, 1] - self.pos_antennas[j, 1]
                 self.uv_coverage.append((u, v))
         self.uv_coverage = np.array(self.uv_coverage)
-        # Plot antenna configuration and uv coverage
-        fig, axs = plt.subplots(1, 2, figsize=(12, 6))
-        for ax in axs:
-            ax.set_aspect('equal', 'box')
 
-        # Plot antenna configuration
-        axs[0].scatter(self.pos_antennas[:, 0], self.pos_antennas[:, 1], c='red', s=5)
-        axs[0].set_title('Antenna Configuration')
-        axs[0].set_xlabel('X Position')
-        axs[0].set_ylabel('Y Position')
-        axs[0].set_aspect('equal', 'box')
+        return self.pos_antennas.copy(), self.uv_coverage.copy()
 
-        # Plot UV coverage
-        axs[1].scatter(self.uv_coverage[:, 0], self.uv_coverage[:, 1], c='blue', s=5)
-        axs[1].set_title('UV Coverage')
-        axs[1].set_xlabel('U (spatial frequency)')
-        axs[1].set_ylabel('V (spatial frequency)')
-        axs[1].set_aspect('equal', 'box')
-
-        plt.tight_layout()
-        plt.show()
 
     def weight_uv_coverage(self, imsize, weighting, robust):
         uv_grid = np.zeros((imsize, imsize))
-        uv_step = 1 / imsize
         if weighting == 'natural':
             for u, v in self.uv_coverage:
-                u_index = int(u / uv_step) + imsize // 2
-                v_index = int(v / uv_step) + imsize // 2
+                u_index = int(u * imsize) + imsize // 2
+                v_index = int(v * imsize) + imsize // 2
                 if 0 <= u_index < imsize and 0 <= v_index < imsize:
                     uv_grid[u_index, v_index] += 1
                 else:
                     print(f'Warning: (u, v) = ({u}, {v}) is outside the UV grid')
         elif weighting == 'uniform':
             for u, v in self.uv_coverage:
-                u_index = int(u / uv_step) + imsize // 2
-                v_index = int(v / uv_step) + imsize // 2
+                u_index = int(u * imsize) + imsize // 2
+                v_index = int(v * imsize) + imsize // 2
                 if 0 <= u_index < imsize and 0 <= v_index < imsize:
                     uv_grid[u_index, v_index] = 1
                 else:
@@ -93,28 +75,65 @@ class CLEAN:
             raise ValueError(f'Invalid weighting scheme "{weighting}".')
         return uv_grid
 
-    def create_psf(self, imsize, weighting='briggs', robust=0.5):
+
+    def create_psf(self, imsize, weighting, robust):
         vis_psf = np.full((imsize, imsize), 1)
         self.uv_grid = self.weight_uv_coverage(imsize, weighting, robust)
         # Create the PSF
         psf = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(self.uv_grid))))
-        # Create a figure with two subplots (side-by-side)
-        fig, ax = plt.subplots(1, 1, figsize=(6, 6))
-        
-        # Plot the UV coverage on the first subplot
-        im = ax.imshow(psf)
-        fig.colorbar(im, ax=ax)
-        ax.set_title('Point Spread Function (PSF)')
-        ax.set_aspect('equal')
-        
-        # Adjust the layout
-        plt.tight_layout()
-        plt.show()
+        # Normalize the PSF
+        psf /= np.max(psf)
+        return psf
 
-    def create_dirty_image(self, imsize, weighting, robust):
-        pass
+
+    def create_visibility(self, imagefile):
+        # Load image as grayscale
+        image = cv.imread(imagefile, cv.IMREAD_GRAYSCALE)
+
+        # If the image is not square, crop it to a square
+        if image.shape[0] != image.shape[1]:
+            print('Warning: This program only supports square images for now. Cropping the image to a square.')
+            size = min(image.shape[0], image.shape[1])
+            image = image[:size, :size]
+        imsize = image.shape[0]
+
+        # Normalize the image
+        image = image.astype(float) / 255
+
+        # Create the visibility data
+        vis_full = np.fft.fftshift(np.fft.fft2(image))
+
+        # Sample the visibility data
+        vis_sampled = np.zeros((imsize, imsize), dtype=np.complex128)
+        for u, v in self.uv_coverage:
+            u_index = int(u * imsize) + imsize // 2
+            v_index = int(v * imsize) + imsize // 2
+            if 0 <= u_index < imsize and 0 <= v_index < imsize:
+                vis_sampled[u_index, v_index] = vis_full[u_index, v_index]
+            else:
+                print(f'Warning: (u, v) = ({u}, {v}) is outside the UV grid')
+
+        return vis_sampled, imsize
+
 
     # Implement the CLEAN algorithm
-    def clean(self):
-        pass
+    def clean(self, vis, imsize, weighting, robust=0.5, n_iter=0):
+        # Create the PSF
+        psf = self.create_psf(imsize, weighting, robust)
+        # Initialize the model and residual
+        model = np.zeros((imsize, imsize), dtype=float)
+        residual = np.abs(np.fft.ifft2(vis * self.weight_uv_coverage(imsize, weighting, robust)))
+        # residual = np.abs(vis * self.weight_uv_coverage(imsize, weighting, robust))
+        # Iterate
+        for i in range(n_iter):
+            # Find the peak in the residual
+            peak = np.unravel_index(np.argmax(residual), residual.shape)
+            value = residual[peak]
+            # Add the peak to the model
+            model[peak] += value
+            # Shift the PSF to the peak
+            shifted_psf = np.roll(np.roll(psf, peak[0] - imsize // 2, axis=0), peak[1] - imsize // 2, axis=1)
+            # Subtract the peak from the residual
+            residual -= shifted_psf * value
+        return psf, model, residual
 
