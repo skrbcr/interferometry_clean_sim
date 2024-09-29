@@ -146,12 +146,17 @@ class CLEAN:
         # Calculate synthesized beam
         sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
 
-        # model *= total_flux / np.sum(model)
+        normalize_factor = total_flux / np.sum(model)
+        model *= normalize_factor
+        residual *= normalize_factor
 
         # Create image from model and residual
         model_rotated = rotate(model, -np.degrees(theta), reshape=False)
         model_rotated = gaussian_filter(model_rotated, sigma=[sigma_x, sigma_y])
         image = rotate(model_rotated, np.degrees(theta), reshape=False) + residual
+
+        # Normalize the image
+        image *= np.pi * sigma_x * sigma_y
 
         return psf, model, residual, image
 

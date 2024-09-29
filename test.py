@@ -1,4 +1,5 @@
 import sys
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colorbar as colorbar
 import cv2 as cv
@@ -7,7 +8,7 @@ from CLEAN import CLEAN
 
 if __name__ == '__main__':
     clean = CLEAN()
-    imagefile = 'point.png'
+    imagefile = 'two_point.png'
 
     # Set antenna array
     antenna_pos, uv_coverage = clean.set_antenna_array('random', 40, b_min=0.01, random_seed=0)
