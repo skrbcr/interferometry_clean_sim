@@ -3,13 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2 as cv
 from scipy.stats.qmc import PoissonDisk
+from scipy.ndimage import gaussian_filter, rotate
 from PoissonDiskSampling import PoissonDiskSampling
+from GaussianFitting import fit_psf_gaussian
 
 class CLEAN:
     def __init__(self):
         self.pos_antennas = None
         self.uv_coverage = None
-        self.uv_grid = None
 
 
     def set_antenna_array(self, geometry, n_antennas, b_min=None, b_max=None, random_seed=0):
@@ -78,9 +79,9 @@ class CLEAN:
 
     def create_psf(self, imsize, weighting, robust):
         vis_psf = np.full((imsize, imsize), 1)
-        self.uv_grid = self.weight_uv_coverage(imsize, weighting, robust)
+        uv_grid = self.weight_uv_coverage(imsize, weighting, robust)
         # Create the PSF
-        psf = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(self.uv_grid))))
+        psf = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(uv_grid))))
         # Normalize the PSF
         psf /= np.max(psf)
         return psf
@@ -113,21 +114,27 @@ class CLEAN:
             else:
                 print(f'Warning: (u, v) = ({u}, {v}) is outside the UV grid')
 
-        return vis_sampled, imsize
+        # Calculate the total flux
+        total_flux = np.sum(image)
+
+        return (vis_sampled, total_flux), imsize
 
 
     # Implement the CLEAN algorithm
-    def clean(self, vis, imsize, weighting, robust=0.5, n_iter=0):
+    def clean(self, vis_data, imsize, weighting, robust=0.5, n_iter=0):
+        vis, total_flux = vis_data
+
         # Create the PSF
         psf = self.create_psf(imsize, weighting, robust)
+
         # Initialize the model and residual
         model = np.zeros((imsize, imsize), dtype=float)
         residual = np.abs(np.fft.ifft2(vis * self.weight_uv_coverage(imsize, weighting, robust)))
-        # residual = np.abs(vis * self.weight_uv_coverage(imsize, weighting, robust))
+
         # Iterate
         for i in range(n_iter):
             # Find the peak in the residual
-            peak = np.unravel_index(np.argmax(residual), residual.shape)
+            peak = np.unravel_index(np.argmax(np.abs(residual)), residual.shape)
             value = residual[peak]
             # Add the peak to the model
             model[peak] += value
@@ -135,5 +142,16 @@ class CLEAN:
             shifted_psf = np.roll(np.roll(psf, peak[0] - imsize // 2, axis=0), peak[1] - imsize // 2, axis=1)
             # Subtract the peak from the residual
             residual -= shifted_psf * value
-        return psf, model, residual
+
+        # Calculate synthesized beam
+        sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
+
+        # model *= total_flux / np.sum(model)
+
+        # Create image from model and residual
+        model_rotated = rotate(model, -np.degrees(theta), reshape=False)
+        model_rotated = gaussian_filter(model_rotated, sigma=[sigma_x, sigma_y])
+        image = rotate(model_rotated, np.degrees(theta), reshape=False) + residual
+
+        return psf, model, residual, image
 

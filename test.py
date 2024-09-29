@@ -7,10 +7,10 @@ from CLEAN import CLEAN
 
 if __name__ == '__main__':
     clean = CLEAN()
-    imagefile = 'two_point.png'
+    imagefile = 'point.png'
 
     # Set antenna array
-    antenna_pos, uv_coverage = clean.set_antenna_array('random', 20, b_min=0.01, random_seed=0)
+    antenna_pos, uv_coverage = clean.set_antenna_array('random', 40, b_min=0.01, random_seed=0)
 
     # Plot antenna positions and uv coverage
     fig, axs = plt.subplots(1, 2, figsize=(12, 6))
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     vis, imsize = clean.create_visibility(imagefile)
 
     # Clean the image
-    psf, model, residual = clean.clean(vis, imsize, 'uniform', n_iter=2)
+    psf, model, residual, image = clean.clean(vis, imsize, 'uniform', n_iter=2)
 
     # Load the original image (true image)
     true_image = cv.imread(imagefile, cv.IMREAD_GRAYSCALE)
@@ -48,12 +48,17 @@ if __name__ == '__main__':
     # Model
     im3 = axs[0, 2].imshow(model, cmap='hot')
     axs[0, 2].set_title('Model')
-    plt.colorbar(im3, ax=axs[1, 0])
+    plt.colorbar(im3, ax=axs[0, 2])
 
     # Residual
     im4 = axs[1, 0].imshow(residual, cmap='hot')
     axs[1, 0].set_title('Residual')
-    plt.colorbar(im4, ax=axs[1, 1])
+    plt.colorbar(im4, ax=axs[1, 0])
+
+    # Cleaned image
+    im5 = axs[1, 1].imshow(image, cmap='hot')
+    axs[1, 1].set_title('Cleaned Image')
+    plt.colorbar(im5, ax=axs[1, 1])
 
     # Display the plot
     plt.tight_layout()
