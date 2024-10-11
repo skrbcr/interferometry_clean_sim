@@ -83,7 +83,7 @@ class CLEAN:
         # Create the PSF
         psf = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(uv_grid))))
         # Normalize the PSF
-        psf /= np.max(psf)
+        # psf /= np.max(psf)
         return psf
 
 
@@ -117,13 +117,18 @@ class CLEAN:
         # Calculate the total flux
         total_flux = np.sum(image)
 
-        return (vis_sampled, total_flux), imsize
+        return vis_sampled, imsize
 
 
-    # Implement the CLEAN algorithm
-    def clean(self, vis_data, imsize, weighting, robust=0.5, n_iter=0):
-        vis, total_flux = vis_data
+    def get_synthesized_beamed_image(self, image, psf):
+        sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
+        beamed_image = rotate(image, -np.degrees(theta), reshape=False)
+        beamed_image = gaussian_filter(beamed_image, sigma=[sigma_x, sigma_y])
+        beamed_image = rotate(beamed_image, np.degrees(theta), reshape=False)
+        return beamed_image
 
+
+    def clean(self, vis, imsize, weighting, robust=0.5, n_iter=0, threshold=0.1):
         # Create the PSF
         psf = self.create_psf(imsize, weighting, robust)
 
@@ -132,31 +137,31 @@ class CLEAN:
         residual = np.abs(np.fft.ifft2(vis * self.weight_uv_coverage(imsize, weighting, robust)))
 
         # Iterate
+        if n_iter <= 0:
+            print('Warning: n_iter is set to less than 1. I will restore the dirty image.')
         for i in range(n_iter):
             # Find the peak in the residual
             peak = np.unravel_index(np.argmax(np.abs(residual)), residual.shape)
+            if np.abs(residual[peak]) < threshold:
+                print(f'Iteration {i + 1}: Peak value {value} is below threshold {threshold}. Stopping the iteration.')
+                break
             value = residual[peak]
             # Add the peak to the model
-            model[peak] += value
+            model[peak] += value / np.max(psf)
             # Shift the PSF to the peak
             shifted_psf = np.roll(np.roll(psf, peak[0] - imsize // 2, axis=0), peak[1] - imsize // 2, axis=1)
             # Subtract the peak from the residual
-            residual -= shifted_psf * value
+            residual -= shifted_psf * value / np.max(psf)
 
         # Calculate synthesized beam
         sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
 
-        normalize_factor = total_flux / np.sum(model)
-        model *= normalize_factor
-        residual *= normalize_factor
+        # normalize_factor = total_flux / np.sum(model)
+        # model *= normalize_factor
+        # residual *= normalize_factor
 
         # Create image from model and residual
-        model_rotated = rotate(model, -np.degrees(theta), reshape=False)
-        model_rotated = gaussian_filter(model_rotated, sigma=[sigma_x, sigma_y])
-        image = rotate(model_rotated, np.degrees(theta), reshape=False) + residual
-
-        # Normalize the image
-        image *= np.pi * sigma_x * sigma_y
+        image = self.get_synthesized_beamed_image(model, psf) + residual
 
         return psf, model, residual, image
 
