@@ -13,7 +13,7 @@ class CLEAN:
         self.uv_coverage = None
 
 
-    def set_antenna_array(self, geometry, n_antennas, b_min=None, b_max=None, random_seed=0):
+    def set_antenna_array(self, geometry, n_antennas, b_min=None, b_max=None, random_seed=1):
         """
         geometry (str): 'random'
         n_antennas (int): number of antennas
@@ -27,7 +27,7 @@ class CLEAN:
             if b_max is None:
                 b_max = 0.5
             pds = PoissonDiskSampling(b_min, b_max, random_seed)
-            self.pos_antennas = np.array(pds.random(n_antennas))
+            self.pos_antennas = np.array(pds.random(n_antennas, max_iter=10000))
         else:
             raise NotImplementedError
         # Construct uv coverage
@@ -83,7 +83,7 @@ class CLEAN:
         # Create the PSF
         psf = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(uv_grid))))
         # Normalize the PSF
-        # psf /= np.max(psf)
+        psf /= np.max(psf)
         return psf
 
 
@@ -122,13 +122,17 @@ class CLEAN:
 
     def get_synthesized_beamed_image(self, image, psf):
         sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
+        max_value = np.max(image)
+        max_index = np.unravel_index(np.argmax(image), image.shape)
         beamed_image = rotate(image, -np.degrees(theta), reshape=False)
         beamed_image = gaussian_filter(beamed_image, sigma=[sigma_x, sigma_y])
         beamed_image = rotate(beamed_image, np.degrees(theta), reshape=False)
+        if beamed_image[max_index] != 0:
+            beamed_image *= max_value / beamed_image[max_index]
         return beamed_image
 
 
-    def clean(self, vis, imsize, weighting, robust=0.5, n_iter=0, threshold=0.1):
+    def clean(self, vis, imsize, weighting, robust=0.5, n_iter=0, threshold=0.1, mask=None):
         # Create the PSF
         psf = self.create_psf(imsize, weighting, robust)
 
@@ -136,22 +140,34 @@ class CLEAN:
         model = np.zeros((imsize, imsize), dtype=float)
         residual = np.abs(np.fft.ifft2(vis * self.weight_uv_coverage(imsize, weighting, robust)))
 
+        # mask
+        if mask is not None:
+            mask = cv.imread(mask, cv.IMREAD_GRAYSCALE)
+            mask = mask.astype(float) / 255
+            # size of mask must be the same as the residual
+            if mask.shape[0] != imsize or mask.shape[1] != imsize:
+                raise ValueError('The size of the mask must be the same as the image.')
+        else:
+            # all pixels are 1
+            mask = np.ones((imsize, imsize))
+
         # Iterate
         if n_iter <= 0:
             print('Warning: n_iter is set to less than 1. I will restore the dirty image.')
         for i in range(n_iter):
             # Find the peak in the residual
-            peak = np.unravel_index(np.argmax(np.abs(residual)), residual.shape)
-            if np.abs(residual[peak]) < threshold:
+            peak = np.unravel_index(np.argmax(np.abs(residual * mask)), residual.shape)
+            value = residual[peak]
+            if np.abs(value) < threshold:
                 print(f'Iteration {i + 1}: Peak value {value} is below threshold {threshold}. Stopping the iteration.')
                 break
-            value = residual[peak]
+            value *= 0.2
             # Add the peak to the model
-            model[peak] += value / np.max(psf)
+            model[peak] += value
             # Shift the PSF to the peak
             shifted_psf = np.roll(np.roll(psf, peak[0] - imsize // 2, axis=0), peak[1] - imsize // 2, axis=1)
             # Subtract the peak from the residual
-            residual -= shifted_psf * value / np.max(psf)
+            residual -= shifted_psf * value
 
         # Calculate synthesized beam
         sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
@@ -162,6 +178,7 @@ class CLEAN:
 
         # Create image from model and residual
         image = self.get_synthesized_beamed_image(model, psf) + residual
+        # image = model + residual
 
         return psf, model, residual, image
 

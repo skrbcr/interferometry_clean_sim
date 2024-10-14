@@ -55,8 +55,6 @@ def fit_psf_gaussian(psf):
                         gaussian_2d(xy[0], xy[1], x0, y0, sigma_x, sigma_y, theta, 1), 
                         (x_data, y_data), psf_data, p0=initial_guess)
 
-    print('Optimal values:', popt)
-
     return popt
 
 
