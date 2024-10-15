@@ -1,5 +1,5 @@
 import sys
-sys.path.append('..')
+sys.path.append('.')
 from CLEAN import CLEAN
 
 def test_clean_basic():

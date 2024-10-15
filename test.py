@@ -8,7 +8,7 @@ from CLEAN import CLEAN
 
 if __name__ == '__main__':
     clean = CLEAN()
-    imagefile = './image/structure.png'
+    imagefile = './example/image/structure.png'
     # maskfile = './image/structure_mask.png'
     maskfile = None
 
