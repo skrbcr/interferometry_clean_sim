@@ -46,7 +46,7 @@ class CLEAN:
                 raise ValueError('b_min or b_max must be provided for "east-west" geometry.')
             if b_min is None:
                 b_min = b_max
-            if N > 2:
+            if n_antennas > 2:
                 print('Warning: N > 2 is not supported for "east-west" geometry. N is set to 2.')
             self.pos_antennas = np.array([[-b_min / 2, 0], [b_min / 2, 0]])
         else:
