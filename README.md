@@ -6,7 +6,7 @@ Simulation of CLEAN algorithm of interferometry
 
 This project is a simulation of the CLEAN algorithm used in radio interferometry.
 
-![Simulation exmaple](misc/intro.mp4)
+https://github.com/user-attachments/assets/c2ec7665-78c7-4990-b531-f064e3f16574
 
 ## Quick Play
 
