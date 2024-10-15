@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import cv2 as cv
 from scipy.stats.qmc import PoissonDisk
 from scipy.ndimage import gaussian_filter, rotate
-from .PoissonDiskSampling import PoissonDiskSampling
-from .GaussianFitting import fit_psf_gaussian
+from CLEAN.PoissonDiskSampling import PoissonDiskSampling
+from CLEAN.GaussianFitting import fit_psf_gaussian
 
 class CLEAN:
     def __init__(self):
