@@ -8,7 +8,7 @@ from CLEAN import CLEAN
 
 if __name__ == '__main__':
     clean = CLEAN()
-    imagefile = './image/point.png'
+    imagefile = './image/structure.png'
     # maskfile = './image/structure_mask.png'
     maskfile = None
 
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     vis, imsize = clean.create_visibility(imagefile)
 
     # Clean the image
-    psf, model, residual, image = clean.clean(vis, imsize, 'uniform', n_iter=0, threshold=0.01, mask=maskfile)
+    psf, model, residual, image = clean.clean(vis, imsize, 'uniform', n_iter=100000, threshold=1e-10, mask=maskfile)
 
     # Load the original image (true image)
     true_image = cv.imread(imagefile, cv.IMREAD_GRAYSCALE)
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     plt.colorbar(im4, ax=axs[1, 0])
 
     # Cleaned image
-    im5 = axs[1, 1].imshow(image, cmap='hot', vmin=-0.01, vmax=0.15)
+    im5 = axs[1, 1].imshow(image, cmap='hot')#, vmin=-0.01, vmax=0.15)
     axs[1, 1].set_title('Cleaned Image')
     plt.colorbar(im5, ax=axs[1, 1])
 

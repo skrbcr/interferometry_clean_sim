@@ -78,12 +78,14 @@ class CLEAN:
 
 
     def create_psf(self, imsize, weighting, robust):
-        vis_psf = np.full((imsize, imsize), 1)
+        # vis_psf = np.full((imsize, imsize), 1)
         uv_grid = self.weight_uv_coverage(imsize, weighting, robust)
         # Create the PSF
-        psf = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(uv_grid))))
+        # psf = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(uv_grid))))
+        psf = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(uv_grid))).real
         # Normalize the PSF
         psf /= np.max(psf)
+        print('PSF created.')
         return psf
 
 
@@ -99,46 +101,48 @@ class CLEAN:
         imsize = image.shape[0]
 
         # Normalize the image
-        image = image.astype(float) / 255
+        image = image.astype(float) / 255# * (imsize ** 2)
+        # # 180度回転
+        # image = np.rot90(image, 2)
+        # plt.imshow(image, cmap='hot')
+        # plt.show()
 
         # Create the visibility data
         vis_full = np.fft.fftshift(np.fft.fft2(image))
 
-        # Sample the visibility data
-        vis_sampled = np.zeros((imsize, imsize), dtype=np.complex128)
-        for u, v in self.uv_coverage:
-            u_index = int(u * imsize) + imsize // 2
-            v_index = int(v * imsize) + imsize // 2
-            if 0 <= u_index < imsize and 0 <= v_index < imsize:
-                vis_sampled[u_index, v_index] = vis_full[u_index, v_index]
-            else:
-                print(f'Warning: (u, v) = ({u}, {v}) is outside the UV grid')
+        # # Sample the visibility data
+        # vis_sampled = np.zeros((imsize, imsize), dtype=np.complex128)
+        # for u, v in self.uv_coverage:
+        #     u_index = int(u * imsize) + imsize // 2
+        #     v_index = int(v * imsize) + imsize // 2
+        #     if 0 <= u_index < imsize and 0 <= v_index < imsize:
+        #         vis_sampled[u_index, v_index] = vis_full[u_index, v_index]
+        #     else:
+        #         print(f'Warning: (u, v) = ({u}, {v}) is outside the UV grid')
 
-        # Calculate the total flux
-        total_flux = np.sum(image)
-
-        return vis_sampled, imsize
+        return vis_full, imsize
 
 
     def get_synthesized_beamed_image(self, image, psf):
         sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
         max_value = np.max(image)
         max_index = np.unravel_index(np.argmax(image), image.shape)
-        beamed_image = rotate(image, -np.degrees(theta), reshape=False)
+        beamed_image = rotate(image, np.degrees(theta), reshape=False)
         beamed_image = gaussian_filter(beamed_image, sigma=[sigma_x, sigma_y])
-        beamed_image = rotate(beamed_image, np.degrees(theta), reshape=False)
+        beamed_image = rotate(beamed_image, -np.degrees(theta), reshape=False)
         if beamed_image[max_index] != 0:
             beamed_image *= max_value / beamed_image[max_index]
         return beamed_image
 
 
-    def clean(self, vis, imsize, weighting, robust=0.5, n_iter=0, threshold=0.1, mask=None):
+    def clean(self, vis, imsize, weighting, robust=0.5, n_iter=0, threshold=0.1, mask=None, gamma=0.2):
         # Create the PSF
         psf = self.create_psf(imsize, weighting, robust)
 
         # Initialize the model and residual
         model = np.zeros((imsize, imsize), dtype=float)
-        residual = np.abs(np.fft.ifft2(vis * self.weight_uv_coverage(imsize, weighting, robust)))
+        uv_grid = self.weight_uv_coverage(imsize, weighting, robust)
+        residual = np.fft.ifft2(np.fft.ifftshift(vis * uv_grid)).real
 
         # mask
         if mask is not None:
@@ -161,7 +165,7 @@ class CLEAN:
             if np.abs(value) < threshold:
                 print(f'Iteration {i + 1}: Peak value {value} is below threshold {threshold}. Stopping the iteration.')
                 break
-            value *= 0.2
+            value *= gamma
             # Add the peak to the model
             model[peak] += value
             # Shift the PSF to the peak
