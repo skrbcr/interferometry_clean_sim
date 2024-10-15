@@ -241,20 +241,24 @@ class CLEAN:
         # Iterate
         if n_iter <= 0:
             print('Warning: n_iter is set to less than 1. I will restore the dirty image.')
-        for i in range(n_iter):
-            # Find the peak in the residual
-            peak = np.unravel_index(np.argmax(np.abs(residual * mask)), residual.shape)
-            value = residual[peak]
-            if np.abs(value) < threshold:
-                print(f'Iteration {i + 1}: Peak value {value} is below threshold {threshold}. Stopping the iteration.')
-                break
-            value *= gamma
-            # Add the peak to the model
-            model[peak] += value
-            # Shift the PSF to the peak
-            shifted_psf = np.roll(np.roll(psf, peak[0] - imsize // 2, axis=0), peak[1] - imsize // 2, axis=1)
-            # Subtract the peak from the residual
-            residual -= shifted_psf * value
+        else:
+            for i in range(n_iter):
+                # Find the peak in the residual
+                peak = np.unravel_index(np.argmax(np.abs(residual * mask)), residual.shape)
+                value = residual[peak]
+                if np.abs(value) < threshold:
+                    print(f'Iteration {i + 1}: Peak value {value} is below threshold {threshold}. Stopping the iteration.')
+                    break
+                value *= gamma
+                # Add the peak to the model
+                model[peak] += value
+                # Shift the PSF to the peak
+                shifted_psf = np.roll(np.roll(psf, peak[0] - imsize // 2, axis=0), peak[1] - imsize // 2, axis=1)
+                # Subtract the peak from the residual
+                residual -= shifted_psf * value
+
+            if i == n_iter - 1:
+                print(f'Maximum number of iterations {n_iter} reached.')
 
         # Calculate synthesized beam
         sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
