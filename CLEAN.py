@@ -13,7 +13,7 @@ class CLEAN:
         self.uv_coverage = None
 
 
-    def set_antenna_array(self, geometry, n_antennas, b_min=None, b_max=None, random_seed=1):
+    def set_antenna_array(self, geometry, n_antennas, b_min=None, b_max=None, theta=None, dt=None, Nt=1, random_seed=1):
         """
         Configure the antenna array.
 
@@ -22,6 +22,9 @@ class CLEAN:
             n_antennas (int): number of antennas.
             b_min (float): minimum baseline length.
             b_max (float): maximum baseline length. This should be less than 0.5.
+            theta (float): declination angle of the target in radians.
+            dt (float): time interval between measurements in radians (2\\pi means 24 hours).
+            Nt (int): number of time steps.
             random_seed (int): random seed for random number generation.
 
         Returns:
@@ -38,18 +41,42 @@ class CLEAN:
                 b_max = 0.5
             pds = PoissonDiskSampling(b_min, b_max, random_seed)
             self.pos_antennas = np.array(pds.random(n_antennas, max_iter=10000))
+        elif geometry == 'east-west':
+            if b_min is None and b_max is None:
+                raise ValueError('b_min or b_max must be provided for "east-west" geometry.')
+            if b_min is None:
+                b_min = b_max
+            if N > 2:
+                print('Warning: N > 2 is not supported for "east-west" geometry. N is set to 2.')
+            self.pos_antennas = np.array([[-b_min / 2, 0], [b_min / 2, 0]])
         else:
             raise NotImplementedError
         # Construct uv coverage
-        self.uv_coverage = []
+        uv_coverage = []
         for i in range(n_antennas):
             for j in range(n_antennas):
                 if i == j:
                     continue
                 u = self.pos_antennas[i, 0] - self.pos_antennas[j, 0]
                 v = self.pos_antennas[i, 1] - self.pos_antennas[j, 1]
-                self.uv_coverage.append((u, v))
-        self.uv_coverage = np.array(self.uv_coverage)
+                uv_coverage.append((u, v))
+
+        # Time evolution of the antenna configuration
+        uv_coverage_add = []
+        if theta is None:
+            theta = np.pi / 2
+        if dt is None:
+            dt = np.pi / 12
+        # for u, v in uv_coverage:
+        #     a = np.sqrt(u ** 2 + v ** 2 / np.sin(theta) ** 2)
+        #     b = a * np.sin(theta)
+        #     t0 = np.arctan2(v, u)
+        #     for i in range(1, Nt):
+        #         u_new = a * np.cos(i * dt + t0)
+        #         v_new = b * np.sin(i * dt + t0)
+        #         uv_coverage_add.append((u_new, v_new))
+
+        self.uv_coverage = np.array(uv_coverage + uv_coverage_add)
 
         return self.pos_antennas.copy(), self.uv_coverage.copy()
 
