@@ -5,6 +5,7 @@ __pycache__/
 
 # User-specific files
 *.mp4
+!misc/*.mp4
 
 # C extensions
 *.so
