@@ -1,5 +1,7 @@
 # Interferometry CLEAN Simulation
 
+[![Python package](https://github.com/skrbcr/interferometry_clean_sim/actions/workflows/python-package.yml/badge.svg)](https://github.com/skrbcr/interferometry_clean_sim/actions/workflows/python-package.yml)
+
 Simulation of CLEAN algorithm for interferometry
 
 ## About
