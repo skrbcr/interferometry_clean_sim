@@ -41,9 +41,10 @@ pip install -r requirements.txt
 │   ├── image                 # Image for `example` directory
 ├── LICENSE
 ├── README.md
+├── requirements.txt
 ```
 
-Some trivial files are omitted in the above illustration.
+Some folders or files are omitted in the above illustration.
 
 ### Usage and examples
 
