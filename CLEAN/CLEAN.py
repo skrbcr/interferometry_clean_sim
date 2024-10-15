@@ -1,17 +1,14 @@
-import math
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2 as cv
-from scipy.stats.qmc import PoissonDisk
 from scipy.ndimage import gaussian_filter, rotate
 from CLEAN.PoissonDiskSampling import PoissonDiskSampling
 from CLEAN.GaussianFitting import fit_psf_gaussian
+
 
 class CLEAN:
     def __init__(self):
         self.pos_antennas = None
         self.uv_coverage = None
-
 
     def set_antenna_array(self, geometry, n_antennas, b_min=None, b_max=None, theta=None, dt=None, Nt=1, random_seed=1):
         """
@@ -80,7 +77,6 @@ class CLEAN:
 
         return self.pos_antennas.copy(), self.uv_coverage.copy()
 
-
     def weight_uv_coverage(self, imsize, weighting, robust):
         """
         Create a UV grid from the UV coverage.
@@ -124,7 +120,6 @@ class CLEAN:
             raise ValueError(f'Invalid weighting scheme "{weighting}".')
         return uv_grid
 
-
     def create_psf(self, imsize, weighting, robust):
         """
         Create the point spread function (PSF).
@@ -145,7 +140,6 @@ class CLEAN:
         psf /= np.max(psf)
         print('PSF created.')
         return psf
-
 
     def create_visibility(self, imagefile):
         """
@@ -169,13 +163,12 @@ class CLEAN:
         imsize = image.shape[0]
 
         # Normalize the image
-        image = image.astype(float) / 255# * (imsize ** 2)
+        image = image.astype(float) / 255
 
         # Create the visibility data
         vis_full = np.fft.fftshift(np.fft.fft2(image))
 
         return vis_full, imsize
-
 
     def get_synthesized_beamed_image(self, image, psf):
         """
@@ -197,7 +190,6 @@ class CLEAN:
         if beamed_image[max_index] != 0:
             beamed_image *= max_value / beamed_image[max_index]
         return beamed_image
-
 
     def clean(self, vis, imsize, weighting, robust=0.5, n_iter=0, threshold=0.1, mask=None, gamma=0.2):
         """
@@ -266,4 +258,3 @@ class CLEAN:
         image = self.get_synthesized_beamed_image(model, psf) + residual
 
         return psf, model, residual, image
-

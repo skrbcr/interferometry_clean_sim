@@ -1,9 +1,9 @@
 import sys
+sys.path.append('.')
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.colorbar as colorbar
 import cv2 as cv
-sys.path.append('.')
+
 from CLEAN import CLEAN
 
 if __name__ == '__main__':

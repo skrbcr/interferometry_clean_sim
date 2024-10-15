@@ -1,5 +1,6 @@
 import random
 
+
 class PoissonDiskSampling:
     """
     Poisson Disk Sampling

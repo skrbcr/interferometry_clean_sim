@@ -1,6 +1,8 @@
 import sys
 sys.path.append('.')
+
 from CLEAN import CLEAN
+
 
 def test_clean_basic():
     imagefile = './example/image/point.png'
@@ -14,4 +16,3 @@ def test_clean_basic():
     assert model is not None
     assert residual is not None
     assert clean_image is not None
-

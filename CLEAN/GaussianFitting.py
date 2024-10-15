@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import curve_fit
 
-# 2D Gaussian function for fitting
+
 def gaussian_2d(x, y, x0, y0, sigma_x, sigma_y, theta, amplitude):
     """
     2D Gaussian function for fitting
@@ -51,10 +51,8 @@ def fit_psf_gaussian(psf):
     psf_data = np.ravel(psf)
 
     # Fit the Gaussian model
-    popt, _ = curve_fit(lambda xy, sigma_x, sigma_y, theta: 
+    popt, _ = curve_fit(lambda xy, sigma_x, sigma_y, theta:
                         gaussian_2d(xy[0], xy[1], x0, y0, sigma_x, sigma_y, theta, 1), 
                         (x_data, y_data), psf_data, p0=initial_guess)
 
     return popt
-
-
