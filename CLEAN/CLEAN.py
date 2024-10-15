@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import cv2 as cv
 from scipy.stats.qmc import PoissonDisk
 from scipy.ndimage import gaussian_filter, rotate
-from PoissonDiskSampling import PoissonDiskSampling
-from GaussianFitting import fit_psf_gaussian
+from .PoissonDiskSampling import PoissonDiskSampling
+from .GaussianFitting import fit_psf_gaussian
 
 class CLEAN:
     def __init__(self):
@@ -81,7 +81,7 @@ class CLEAN:
         return self.pos_antennas.copy(), self.uv_coverage.copy()
 
 
-    def _weight_uv_coverage(self, imsize, weighting, robust):
+    def weight_uv_coverage(self, imsize, weighting, robust):
         """
         Create a UV grid from the UV coverage.
 
@@ -125,7 +125,7 @@ class CLEAN:
         return uv_grid
 
 
-    def _create_psf(self, imsize, weighting, robust):
+    def create_psf(self, imsize, weighting, robust):
         """
         Create the point spread function (PSF).
 
@@ -138,7 +138,7 @@ class CLEAN:
             psf (np.ndarray): PSF.
         """
         # vis_psf = np.full((imsize, imsize), 1)
-        uv_grid = self._weight_uv_coverage(imsize, weighting, robust)
+        uv_grid = self.weight_uv_coverage(imsize, weighting, robust)
         # Create the PSF
         psf = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(uv_grid))).real
         # Normalize the PSF
@@ -177,7 +177,7 @@ class CLEAN:
         return vis_full, imsize
 
 
-    def _get_synthesized_beamed_image(self, image, psf):
+    def get_synthesized_beamed_image(self, image, psf):
         """
         Create the synthesized beamed image from the image and the PSF.
 
@@ -220,11 +220,11 @@ class CLEAN:
             image (np.ndarray): cleaned image.
         """
         # Create the PSF
-        psf = self._create_psf(imsize, weighting, robust)
+        psf = self.create_psf(imsize, weighting, robust)
 
         # Initialize the model and residual
         model = np.zeros((imsize, imsize), dtype=float)
-        uv_grid = self._weight_uv_coverage(imsize, weighting, robust)
+        uv_grid = self.weight_uv_coverage(imsize, weighting, robust)
         residual = np.fft.ifft2(np.fft.ifftshift(vis * uv_grid)).real
 
         # mask
@@ -256,15 +256,14 @@ class CLEAN:
                 shifted_psf = np.roll(np.roll(psf, peak[0] - imsize // 2, axis=0), peak[1] - imsize // 2, axis=1)
                 # Subtract the peak from the residual
                 residual -= shifted_psf * value
-
-            if i == n_iter - 1:
-                print(f'Maximum number of iterations {n_iter} reached.')
+                if i == n_iter - 1:
+                    print(f'Maximum number of iterations {n_iter} reached.')
 
         # Calculate synthesized beam
         sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
 
         # Create image from model and residual
-        image = self._get_synthesized_beamed_image(model, psf) + residual
+        image = self.get_synthesized_beamed_image(model, psf) + residual
 
         return psf, model, residual, image
 
