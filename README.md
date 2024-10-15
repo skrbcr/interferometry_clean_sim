@@ -14,8 +14,13 @@ https://github.com/user-attachments/assets/c2ec7665-78c7-4990-b531-f064e3f16574
 
 ## Quick Play
 
-You can try this simulation on [Google Colab](https://drive.google.com/drive/folders/1PP8717rmmz6VSvvcDNJT5GyhRdU4WQIE?usp=drive_link).
-The files in this Google Drive folder are the same as those in the `example` folder of this repository.
+You can try this simulation on Google Colab:
+
+- [1_basic](https://colab.research.google.com/github/skrbcr/interferometry_clean_sim/blob/main/example/1_basic.ipynb)
+- [2_minimum](https://colab.research.google.com/github/skrbcr/interferometry_clean_sim/blob/main/example/2_minimum.ipynb)
+- [3_video](https://colab.research.google.com/github/skrbcr/interferometry_clean_sim/blob/main/example/3_video.ipynb)
+
+These files are the same as those in the `example` folder of this repository.
 
 ## Usage
 
