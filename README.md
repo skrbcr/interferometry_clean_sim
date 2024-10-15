@@ -1,6 +1,7 @@
 # Interferometry CLEAN Simulation
 
 [![Python package](https://github.com/skrbcr/interferometry_clean_sim/actions/workflows/python-package.yml/badge.svg)](https://github.com/skrbcr/interferometry_clean_sim/actions/workflows/python-package.yml)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/skrbcr/interferometry_clean_sim/blob/main/example/1_basic.ipynb)
 
 Simulation of CLEAN algorithm for interferometry
 
