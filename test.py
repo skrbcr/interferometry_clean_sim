@@ -29,7 +29,7 @@ if __name__ == '__main__':
     vis, imsize = clean.create_visibility(imagefile)
 
     # Clean the image
-    psf, model, residual, image = clean.clean(vis, imsize, 'uniform', n_iter=100000, threshold=1e-10, mask=maskfile)
+    psf, model, residual, image = clean.clean(vis, imsize, 'uniform', n_iter=0, threshold=1e-10, mask=maskfile)
 
     # Load the original image (true image)
     true_image = cv.imread(imagefile, cv.IMREAD_GRAYSCALE)
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     plt.colorbar(im5, ax=axs[1, 1])
 
     # Plot ideal image (image obtained by convolving the true image with the synthesized beam)
-    ideal_image = clean.get_synthesized_beamed_image(true_image, psf)
+    ideal_image = clean._get_synthesized_beamed_image(true_image, psf)
     im6 = axs[1, 2].imshow(ideal_image, cmap='hot')
     axs[1, 2].set_title('Ideal Image')
     plt.colorbar(im6, ax=axs[1, 2])

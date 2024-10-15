@@ -15,8 +15,18 @@ class CLEAN:
 
     def set_antenna_array(self, geometry, n_antennas, b_min=None, b_max=None, random_seed=1):
         """
-        geometry (str): 'random'
-        n_antennas (int): number of antennas
+        Configure the antenna array.
+
+        Args:
+            geometry (str): geometry of the antenna array. Currently only 'random' is supported.
+            n_antennas (int): number of antennas.
+            b_min (float): minimum baseline length.
+            b_max (float): maximum baseline length. This should be less than 0.5.
+            random_seed (int): random seed for random number generation.
+
+        Returns:
+            pos_antennas (np.ndarray): positions of antennas.
+            uv_coverage (np.ndarray): UV coverage
         """
         if n_antennas < 2:
             raise ValueError('At least 2 antennas are required.')
@@ -44,7 +54,18 @@ class CLEAN:
         return self.pos_antennas.copy(), self.uv_coverage.copy()
 
 
-    def weight_uv_coverage(self, imsize, weighting, robust):
+    def _weight_uv_coverage(self, imsize, weighting, robust):
+        """
+        Create a UV grid from the UV coverage.
+
+        Args:
+            imsize (int): size of the image. The UV grid will have the same size.
+            weighting (str): weighting scheme. Currently supports 'natural' and 'uniform'.
+            robust (float): robust parameter for the Briggs weighting. This is currently meaningless.
+
+        Returns:
+            uv_grid (np.ndarray): UV grid.
+        """
         uv_grid = np.zeros((imsize, imsize))
         if weighting == 'natural':
             for u, v in self.uv_coverage:
@@ -77,11 +98,21 @@ class CLEAN:
         return uv_grid
 
 
-    def create_psf(self, imsize, weighting, robust):
+    def _create_psf(self, imsize, weighting, robust):
+        """
+        Create the point spread function (PSF).
+
+        Args:
+            imsize (int): size of the image. The PSF will have the same size.
+            weighting (str): weighting scheme. Currently supports 'natural' and 'uniform'.
+            robust (float): robust parameter for the Briggs weighting. This is currently meaningless.
+
+        Returns:
+            psf (np.ndarray): PSF.
+        """
         # vis_psf = np.full((imsize, imsize), 1)
-        uv_grid = self.weight_uv_coverage(imsize, weighting, robust)
+        uv_grid = self._weight_uv_coverage(imsize, weighting, robust)
         # Create the PSF
-        # psf = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(uv_grid))))
         psf = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(uv_grid))).real
         # Normalize the PSF
         psf /= np.max(psf)
@@ -90,6 +121,16 @@ class CLEAN:
 
 
     def create_visibility(self, imagefile):
+        """
+        Create the visibility data from the image.
+
+        Args:
+            imagefile (str): path to the image file.
+
+        Returns:
+            vis_full (np.ndarray): full visibility data.
+            imsize (int): size of the image.
+        """
         # Load image as grayscale
         image = cv.imread(imagefile, cv.IMREAD_GRAYSCALE)
 
@@ -102,28 +143,24 @@ class CLEAN:
 
         # Normalize the image
         image = image.astype(float) / 255# * (imsize ** 2)
-        # # 180度回転
-        # image = np.rot90(image, 2)
-        # plt.imshow(image, cmap='hot')
-        # plt.show()
 
         # Create the visibility data
         vis_full = np.fft.fftshift(np.fft.fft2(image))
 
-        # # Sample the visibility data
-        # vis_sampled = np.zeros((imsize, imsize), dtype=np.complex128)
-        # for u, v in self.uv_coverage:
-        #     u_index = int(u * imsize) + imsize // 2
-        #     v_index = int(v * imsize) + imsize // 2
-        #     if 0 <= u_index < imsize and 0 <= v_index < imsize:
-        #         vis_sampled[u_index, v_index] = vis_full[u_index, v_index]
-        #     else:
-        #         print(f'Warning: (u, v) = ({u}, {v}) is outside the UV grid')
-
         return vis_full, imsize
 
 
-    def get_synthesized_beamed_image(self, image, psf):
+    def _get_synthesized_beamed_image(self, image, psf):
+        """
+        Create the synthesized beamed image from the image and the PSF.
+
+        Args:
+            image (np.ndarray): image.
+            psf (np.ndarray): PSF.
+
+        Returns:
+            beamed_image (np.ndarray): synthesized beamed image.
+        """
         sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
         max_value = np.max(image)
         max_index = np.unravel_index(np.argmax(image), image.shape)
@@ -136,12 +173,31 @@ class CLEAN:
 
 
     def clean(self, vis, imsize, weighting, robust=0.5, n_iter=0, threshold=0.1, mask=None, gamma=0.2):
+        """
+        Clean the image.
+
+        Args:
+            vis (np.ndarray): visibility data.
+            imsize (int): size of the image.
+            weighting (str): weighting scheme. Currently supports 'natural' and 'uniform'.
+            robust (float): robust parameter for the Briggs weighting. This is currently meaningless.
+            n_iter (int): limit number of iterations.
+            threshold (float): threshold for stopping the iteration.
+            mask (str): path to the mask file.
+            gamma (float): loop gain.
+
+        Returns:
+            psf (np.ndarray): PSF.
+            model (np.ndarray): model image.
+            residual (np.ndarray): residual image.
+            image (np.ndarray): cleaned image.
+        """
         # Create the PSF
-        psf = self.create_psf(imsize, weighting, robust)
+        psf = self._create_psf(imsize, weighting, robust)
 
         # Initialize the model and residual
         model = np.zeros((imsize, imsize), dtype=float)
-        uv_grid = self.weight_uv_coverage(imsize, weighting, robust)
+        uv_grid = self._weight_uv_coverage(imsize, weighting, robust)
         residual = np.fft.ifft2(np.fft.ifftshift(vis * uv_grid)).real
 
         # mask
@@ -176,13 +232,8 @@ class CLEAN:
         # Calculate synthesized beam
         sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
 
-        # normalize_factor = total_flux / np.sum(model)
-        # model *= normalize_factor
-        # residual *= normalize_factor
-
         # Create image from model and residual
-        image = self.get_synthesized_beamed_image(model, psf) + residual
-        # image = model + residual
+        image = self._get_synthesized_beamed_image(model, psf) + residual
 
         return psf, model, residual, image
 
