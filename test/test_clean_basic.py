@@ -3,7 +3,7 @@ sys.path.append('.')
 from CLEAN import CLEAN
 
 def test_clean_basic():
-    imagefile = '../example/image/point.png'
+    imagefile = './example/image/point.png'
 
     clean = CLEAN()
     clean.set_antenna_array('random', 20, b_min=0.01)
