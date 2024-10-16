@@ -59,6 +59,8 @@ Some folders or files are omitted in the above illustration.
 
 Please refer to the `example` folder for usage instructions.
 
+Also, please refer to the [docs](https://skrbcr.github.io/interferometry_clean_sim/).
+
 ## To Do
 
 Although I am a bit fatigued with this project, I still have some ideas for improvements:
