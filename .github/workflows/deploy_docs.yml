@@ -4,33 +4,37 @@ on:
   push:
     branches: [ "main" ]
 
+permissions:
+  contents: write
+  id-token: write
+  pages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
-        python-version: '3.x'
+        python-version: '3.12'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install sphinx
-        pip install sphinx_rtd_theme  # 必要に応じてテーマも追加
-        pip install -r requirements.txt  # 必要であれば他の依存パッケージもインストール
+        pip install sphinx_rtd_theme
+        pip install -r requirements.txt
 
     - name: Build documentation
       run: |
-        cd docs
-        make html  # Sphinxの設定による
+        make -C docs html
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs/_build/html  # ビルドされたHTMLドキュメントのパス
+        publish_dir: ./docs/html
