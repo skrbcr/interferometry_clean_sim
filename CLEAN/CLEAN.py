@@ -183,7 +183,7 @@ class CLEAN:
         Returns:
             np.ndarray: synthesized beamed image.
         """
-        sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
+        sigma_x, sigma_y, theta = _fit_psf_gaussian(psf)
         max_value = np.max(image)
         max_index = np.unravel_index(np.argmax(image), image.shape)
         beamed_image = rotate(image, np.degrees(theta), reshape=False)
@@ -255,7 +255,7 @@ class CLEAN:
                     print(f'Maximum number of iterations {n_iter} reached.')
 
         # Calculate synthesized beam
-        sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
+        sigma_x, sigma_y, theta = _fit_psf_gaussian(psf)
 
         # Create image from model and residual
         image = self.get_synthesized_beamed_image(model, psf) + residual
