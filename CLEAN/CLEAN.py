@@ -37,7 +37,7 @@ class CLEAN:
                 raise ValueError('b_min must be provided for "random" geometry.')
             if b_max is None:
                 b_max = 0.5
-            pds = PoissonDiskSampling(b_min, b_max, random_seed)
+            pds = _PoissonDiskSampling(b_min, b_max, random_seed)
             self.pos_antennas = np.array(pds.random(n_antennas, max_iter=10000))
         elif geometry == 'east-west':
             if b_min is None and b_max is None:
