@@ -2,6 +2,7 @@
 
 [![Python package](https://github.com/skrbcr/interferometry_clean_sim/actions/workflows/python-package.yml/badge.svg)](https://github.com/skrbcr/interferometry_clean_sim/actions/workflows/python-package.yml)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/skrbcr/interferometry_clean_sim/blob/main/example/1_basic.ipynb)
+[![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue?style=flat-square&logo=github)](https://skrbcr.github.io/interferometry_clean_sim/)
 
 Simulation of CLEAN algorithm for interferometry
 
