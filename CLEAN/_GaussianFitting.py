@@ -2,7 +2,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 
-def gaussian_2d(x, y, x0, y0, sigma_x, sigma_y, theta, amplitude):
+def _gaussian_2d(x, y, x0, y0, sigma_x, sigma_y, theta, amplitude):
     """
     2D Gaussian function for fitting
 
@@ -25,7 +25,7 @@ def gaussian_2d(x, y, x0, y0, sigma_x, sigma_y, theta, amplitude):
     return amplitude * np.exp(-(a * (x - x0) ** 2 + 2 * b * (x - x0) * (y - y0) + c * (y - y0) ** 2))
 
 
-def fit_psf_gaussian(psf):
+def _fit_psf_gaussian(psf):
     """
     Fit a 2D Gaussian to the PSF to estimate the synthesized beam.
 
@@ -52,7 +52,7 @@ def fit_psf_gaussian(psf):
 
     # Fit the Gaussian model
     popt, _ = curve_fit(lambda xy, sigma_x, sigma_y, theta:
-                        gaussian_2d(xy[0], xy[1], x0, y0, sigma_x, sigma_y, theta, 1),
+                        _gaussian_2d(xy[0], xy[1], x0, y0, sigma_x, sigma_y, theta, 1),
                         (x_data, y_data), psf_data, p0=initial_guess)
 
     return popt

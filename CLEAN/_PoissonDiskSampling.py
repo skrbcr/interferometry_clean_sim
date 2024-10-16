@@ -1,7 +1,7 @@
 import random
 
 
-class PoissonDiskSampling:
+class _PoissonDiskSampling:
     """
     Poisson Disk Sampling
     """
