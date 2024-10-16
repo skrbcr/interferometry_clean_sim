@@ -8,6 +8,7 @@ __pycache__/
 !misc/*.mp4
 /sphinx/_static/
 /sphinx/_templates/
+/docs/
 
 # C extensions
 *.so
