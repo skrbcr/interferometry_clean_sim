@@ -6,6 +6,9 @@ __pycache__/
 # User-specific files
 *.mp4
 !misc/*.mp4
+/sphinx/_static/
+/sphinx/_templates/
+/docs/
 
 # C extensions
 *.so

@@ -1,8 +1,8 @@
 import numpy as np
 import cv2 as cv
 from scipy.ndimage import gaussian_filter, rotate
-from CLEAN.PoissonDiskSampling import PoissonDiskSampling
-from CLEAN.GaussianFitting import fit_psf_gaussian
+from CLEAN._PoissonDiskSampling import _PoissonDiskSampling
+from CLEAN._GaussianFitting import _fit_psf_gaussian
 
 
 class CLEAN:
@@ -25,8 +25,9 @@ class CLEAN:
             random_seed (int): random seed for random number generation.
 
         Returns:
-            pos_antennas (np.ndarray): positions of antennas.
-            uv_coverage (np.ndarray): UV coverage
+            tuple: A tuple containing:
+                - pos_antennas (np.ndarray): Positions of antennas.
+                - uv_coverage (np.ndarray): UV coverage.
         """
         if n_antennas < 2:
             raise ValueError('At least 2 antennas are required.')
@@ -36,7 +37,7 @@ class CLEAN:
                 raise ValueError('b_min must be provided for "random" geometry.')
             if b_max is None:
                 b_max = 0.5
-            pds = PoissonDiskSampling(b_min, b_max, random_seed)
+            pds = _PoissonDiskSampling(b_min, b_max, random_seed)
             self.pos_antennas = np.array(pds.random(n_antennas, max_iter=10000))
         elif geometry == 'east-west':
             if b_min is None and b_max is None:
@@ -87,7 +88,7 @@ class CLEAN:
             robust (float): robust parameter for the Briggs weighting. This is currently meaningless.
 
         Returns:
-            uv_grid (np.ndarray): UV grid.
+            np.ndarray: UV grid.
         """
         uv_grid = np.zeros((imsize, imsize))
         if weighting == 'natural':
@@ -130,7 +131,7 @@ class CLEAN:
             robust (float): robust parameter for the Briggs weighting. This is currently meaningless.
 
         Returns:
-            psf (np.ndarray): PSF.
+            np.ndarray: PSF.
         """
         # vis_psf = np.full((imsize, imsize), 1)
         uv_grid = self.weight_uv_coverage(imsize, weighting, robust)
@@ -149,8 +150,9 @@ class CLEAN:
             imagefile (str): path to the image file.
 
         Returns:
-            vis_full (np.ndarray): full visibility data.
-            imsize (int): size of the image.
+            tuple: A tuple containing:
+                - vis_full (np.ndarray): full visibility data.
+                - imsize (int): size of the image.
         """
         # Load image as grayscale
         image = cv.imread(imagefile, cv.IMREAD_GRAYSCALE)
@@ -179,9 +181,9 @@ class CLEAN:
             psf (np.ndarray): PSF.
 
         Returns:
-            beamed_image (np.ndarray): synthesized beamed image.
+            np.ndarray: synthesized beamed image.
         """
-        sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
+        sigma_x, sigma_y, theta = _fit_psf_gaussian(psf)
         max_value = np.max(image)
         max_index = np.unravel_index(np.argmax(image), image.shape)
         beamed_image = rotate(image, np.degrees(theta), reshape=False)
@@ -206,10 +208,11 @@ class CLEAN:
             gamma (float): loop gain.
 
         Returns:
-            psf (np.ndarray): PSF.
-            model (np.ndarray): model image.
-            residual (np.ndarray): residual image.
-            image (np.ndarray): cleaned image.
+            tuple: A tuple containing:
+                - psf (np.ndarray): PSF.
+                - model (np.ndarray): model image.
+                - residual (np.ndarray): residual image.
+                - image (np.ndarray): cleaned image.
         """
         # Create the PSF
         psf = self.create_psf(imsize, weighting, robust)
@@ -252,7 +255,7 @@ class CLEAN:
                     print(f'Maximum number of iterations {n_iter} reached.')
 
         # Calculate synthesized beam
-        sigma_x, sigma_y, theta = fit_psf_gaussian(psf)
+        sigma_x, sigma_y, theta = _fit_psf_gaussian(psf)
 
         # Create image from model and residual
         image = self.get_synthesized_beamed_image(model, psf) + residual
