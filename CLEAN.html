@@ -95,29 +95,27 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CLEAN</span></span><a class="headerlink" href="#CLEAN.CLEAN.CLEAN" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="CLEAN.CLEAN.CLEAN.clean">
-<span class="sig-name descname"><span class="pre">clean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imsize</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighting</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robust</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#CLEAN.CLEAN.CLEAN.clean" title="Link to this definition"></a></dt>
-<dd><p>Clean the image.</p>
+<dt class="sig sig-object py" id="CLEAN.CLEAN.CLEAN.set_antenna_array">
+<span class="sig-name descname"><span class="pre">set_antenna_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geometry</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_antennas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Nt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#CLEAN.CLEAN.CLEAN.set_antenna_array" title="Link to this definition"></a></dt>
+<dd><p>Configure the antenna array.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>vis</strong> (<em>np.ndarray</em>) – visibility data.</p></li>
-<li><p><strong>imsize</strong> (<em>int</em>) – size of the image.</p></li>
-<li><p><strong>weighting</strong> (<em>str</em>) – weighting scheme. Currently supports ‘natural’ and ‘uniform’.</p></li>
-<li><p><strong>robust</strong> (<em>float</em>) – robust parameter for the Briggs weighting. This is currently meaningless.</p></li>
-<li><p><strong>n_iter</strong> (<em>int</em>) – limit number of iterations.</p></li>
-<li><p><strong>threshold</strong> (<em>float</em>) – threshold for stopping the iteration.</p></li>
-<li><p><strong>mask</strong> (<em>str</em>) – path to the mask file.</p></li>
-<li><p><strong>gamma</strong> (<em>float</em>) – loop gain.</p></li>
+<li><p><strong>geometry</strong> (<em>str</em>) – geometry of the antenna array. Currently only ‘random’ is supported.</p></li>
+<li><p><strong>n_antennas</strong> (<em>int</em>) – number of antennas.</p></li>
+<li><p><strong>b_min</strong> (<em>float</em>) – minimum baseline length.</p></li>
+<li><p><strong>b_max</strong> (<em>float</em>) – maximum baseline length. This should be less than 0.5.</p></li>
+<li><p><strong>theta</strong> (<em>float</em>) – declination angle of the target in radians.</p></li>
+<li><p><strong>dt</strong> (<em>float</em>) – time interval between measurements in radians (2pi means 24 hours).</p></li>
+<li><p><strong>Nt</strong> (<em>int</em>) – number of time steps.</p></li>
+<li><p><strong>random_seed</strong> (<em>int</em>) – random seed for random number generation.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><dl class="simple">
 <dt>A tuple containing:</dt><dd><ul class="simple">
-<li><p>psf (np.ndarray): PSF.</p></li>
-<li><p>model (np.ndarray): model image.</p></li>
-<li><p>residual (np.ndarray): residual image.</p></li>
-<li><p>image (np.ndarray): cleaned image.</p></li>
+<li><p>pos_antennas (np.ndarray): Positions of antennas.</p></li>
+<li><p>uv_coverage (np.ndarray): UV coverage.</p></li>
 </ul>
 </dd>
 </dl>
@@ -125,6 +123,27 @@
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="CLEAN.CLEAN.CLEAN.weight_uv_coverage">
+<span class="sig-name descname"><span class="pre">weight_uv_coverage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">imsize</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighting</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robust</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#CLEAN.CLEAN.CLEAN.weight_uv_coverage" title="Link to this definition"></a></dt>
+<dd><p>Create a UV grid from the UV coverage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>imsize</strong> (<em>int</em>) – size of the image. The UV grid will have the same size.</p></li>
+<li><p><strong>weighting</strong> (<em>str</em>) – weighting scheme. Currently supports ‘natural’ and ‘uniform’.</p></li>
+<li><p><strong>robust</strong> (<em>float</em>) – robust parameter for the Briggs weighting. This is currently meaningless.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>UV grid.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -195,27 +214,29 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="CLEAN.CLEAN.CLEAN.set_antenna_array">
-<span class="sig-name descname"><span class="pre">set_antenna_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geometry</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_antennas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Nt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#CLEAN.CLEAN.CLEAN.set_antenna_array" title="Link to this definition"></a></dt>
-<dd><p>Configure the antenna array.</p>
+<dt class="sig sig-object py" id="CLEAN.CLEAN.CLEAN.clean">
+<span class="sig-name descname"><span class="pre">clean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imsize</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighting</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robust</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#CLEAN.CLEAN.CLEAN.clean" title="Link to this definition"></a></dt>
+<dd><p>Clean the image.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>geometry</strong> (<em>str</em>) – geometry of the antenna array. Currently only ‘random’ is supported.</p></li>
-<li><p><strong>n_antennas</strong> (<em>int</em>) – number of antennas.</p></li>
-<li><p><strong>b_min</strong> (<em>float</em>) – minimum baseline length.</p></li>
-<li><p><strong>b_max</strong> (<em>float</em>) – maximum baseline length. This should be less than 0.5.</p></li>
-<li><p><strong>theta</strong> (<em>float</em>) – declination angle of the target in radians.</p></li>
-<li><p><strong>dt</strong> (<em>float</em>) – time interval between measurements in radians (2pi means 24 hours).</p></li>
-<li><p><strong>Nt</strong> (<em>int</em>) – number of time steps.</p></li>
-<li><p><strong>random_seed</strong> (<em>int</em>) – random seed for random number generation.</p></li>
+<li><p><strong>vis</strong> (<em>np.ndarray</em>) – visibility data.</p></li>
+<li><p><strong>imsize</strong> (<em>int</em>) – size of the image.</p></li>
+<li><p><strong>weighting</strong> (<em>str</em>) – weighting scheme. Currently supports ‘natural’ and ‘uniform’.</p></li>
+<li><p><strong>robust</strong> (<em>float</em>) – robust parameter for the Briggs weighting. This is currently meaningless.</p></li>
+<li><p><strong>n_iter</strong> (<em>int</em>) – limit number of iterations.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – threshold for stopping the iteration.</p></li>
+<li><p><strong>mask</strong> (<em>str</em>) – path to the mask file.</p></li>
+<li><p><strong>gamma</strong> (<em>float</em>) – loop gain.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><dl class="simple">
 <dt>A tuple containing:</dt><dd><ul class="simple">
-<li><p>pos_antennas (np.ndarray): Positions of antennas.</p></li>
-<li><p>uv_coverage (np.ndarray): UV coverage.</p></li>
+<li><p>psf (np.ndarray): PSF.</p></li>
+<li><p>model (np.ndarray): model image.</p></li>
+<li><p>residual (np.ndarray): residual image.</p></li>
+<li><p>image (np.ndarray): cleaned image.</p></li>
 </ul>
 </dd>
 </dl>
@@ -223,27 +244,6 @@
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>tuple</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="CLEAN.CLEAN.CLEAN.weight_uv_coverage">
-<span class="sig-name descname"><span class="pre">weight_uv_coverage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">imsize</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighting</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robust</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#CLEAN.CLEAN.CLEAN.weight_uv_coverage" title="Link to this definition"></a></dt>
-<dd><p>Create a UV grid from the UV coverage.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>imsize</strong> (<em>int</em>) – size of the image. The UV grid will have the same size.</p></li>
-<li><p><strong>weighting</strong> (<em>str</em>) – weighting scheme. Currently supports ‘natural’ and ‘uniform’.</p></li>
-<li><p><strong>robust</strong> (<em>float</em>) – robust parameter for the Briggs weighting. This is currently meaningless.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>UV grid.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
