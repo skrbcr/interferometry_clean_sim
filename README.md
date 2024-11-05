@@ -8,13 +8,15 @@ Simulation of CLEAN algorithm for interferometry
 
 ## About
 
-This project simulates the CLEAN algorithm used in radio interferometry.
+This project simulates the `CLEAN` algorithm used in radio interferometry.
+In radio astronomy observation, the raw image retreived from the antennas contains so much noise.
+This algorithm removes noise from it and obtains true image.
 
 **Demonstration:**
 
-https://github.com/user-attachments/assets/c2ec7665-78c7-4990-b531-f064e3f16574
+Noise are removed and only the real object got cleared.
 
-In radio astronomy, the raw image contains so much noise. This `CLEAN` is the famous algorithm to remove the noise.
+https://github.com/user-attachments/assets/0c978ea0-a2aa-40d7-92ec-e3422dbbad88
 
 ## Quick Play
 
@@ -82,4 +84,3 @@ Feel free to contact me anytime.
 
 - [Högbom, J. (1974), ``Aperture synthesis with a non-regular distribution of interferometer baselines'', Astrophys. J. Suppl. Ser., **15**, 417-426.](https://ui.adsabs.harvard.edu/abs/1974A%26AS...15..417H/abstract)
 - [The `CLEAN' algorithm --- NRAO](https://www.cv.nrao.edu/~abridle/deconvol/node7.html)
-
