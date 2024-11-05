@@ -14,6 +14,8 @@ This project simulates the CLEAN algorithm used in radio interferometry.
 
 https://github.com/user-attachments/assets/c2ec7665-78c7-4990-b531-f064e3f16574
 
+In radio astronomy, the raw image contains so much noise. This `CLEAN` is the famous algorithm to remove the noise.
+
 ## Quick Play
 
 You can try this simulation on Google Colab:
