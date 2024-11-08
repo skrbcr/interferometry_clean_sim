@@ -65,14 +65,14 @@ class CLEAN:
             theta = np.pi / 2
         if dt is None:
             dt = np.pi / 12
-        # for u, v in uv_coverage:
-        #     a = np.sqrt(u ** 2 + v ** 2 / np.sin(theta) ** 2)
-        #     b = a * np.sin(theta)
-        #     t0 = np.arctan2(v, u)
-        #     for i in range(1, Nt):
-        #         u_new = a * np.cos(i * dt + t0)
-        #         v_new = b * np.sin(i * dt + t0)
-        #         uv_coverage_add.append((u_new, v_new))
+        for u, v in uv_coverage:
+            a = np.sqrt(u ** 2 + v ** 2 / np.sin(theta) ** 2)
+            b = a * np.sin(theta)
+            t0 = np.arctan2(v, u)
+            for i in range(1, Nt):
+                u_new = a * np.cos(i * dt + t0)
+                v_new = b * np.sin(i * dt + t0)
+                uv_coverage_add.append((u_new, v_new))
 
         self.uv_coverage = np.array(uv_coverage + uv_coverage_add)
 
