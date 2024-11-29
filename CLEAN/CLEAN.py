@@ -32,27 +32,83 @@ class CLEAN:
         if n_antennas < 2:
             raise ValueError('At least 2 antennas are required.')
         # Generate antenna configuration
-        if geometry == 'random':
-            if b_min is None:
-                raise ValueError('b_min must be provided for "random" geometry.')
-            if b_max is None:
-                b_max = 0.5
-            pds = _PoissonDiskSampling(b_min, b_max, random_seed)
-            self.pos_antennas = np.array(pds.random(n_antennas, max_iter=10000))
-        elif geometry == 'east-west':
-            if b_min is None and b_max is None:
-                raise ValueError('b_min or b_max must be provided for "east-west" geometry.')
-            if b_min is None:
-                b_min = b_max
-            if n_antennas > 2:
-                print('Warning: N > 2 is not supported for "east-west" geometry. N is set to 2.')
-            self.pos_antennas = np.array([[-b_min / 2, 0], [b_min / 2, 0]])
-        else:
-            raise NotImplementedError
+        if n_antennas is None:
+            n_antennas = 8
+        if b_min is None and b_max is None:
+            b_min = 0.1
+            b_max = 0.5
+        if b_min is None:
+            b_min = b_max * 0.2
+        if b_max is None:
+            b_max = 5 * b_min
+        match geometry:
+            case 'random':
+                pds = _PoissonDiskSampling(b_min, b_max, random_seed)
+                self.pos_antennas = np.array(pds.random(n_antennas, max_iter=10000))
+            case 'grid':
+                self.pos_antennas = []
+                for i in range(n_antennas):
+                    for j in range(n_antennas):
+                        self.pos_antennas.append([i * b_min, j * b_min])
+                self.pos_antennas = np.array(self.pos_antennas)
+            case 'east-west':
+                if n_antennas > 2:
+                    print('Warning: N > 2 is not supported for "east-west" geometry. N is set to 2.')
+                self.pos_antennas = np.array([[-b_min / 2, 0], [b_min / 2, 0]])
+            case '+':
+                if n_antennas is not None:
+                    print(f'Warning: n_antennas is ignored for "{geometry}" geometry.')
+                self.pos_antennas = np.array([[0, 0]])
+                for i in range(1, int(b_max / b_min / 2) + 1):
+                    self.pos_antennas = np.append(self.pos_antennas, [[i * b_min, 0], [-i * b_min, 0]], axis=0)
+                for i in range(1, int(b_max / b_min / 2) + 1):
+                    self.pos_antennas = np.append(self.pos_antennas, [[0, i * b_min], [0, -i * b_min]], axis=0)
+            case 'T':
+                if n_antennas is not None:
+                    print(f'Warning: n_antennas is ignored for "{geometry}" geometry.')
+                self.pos_antennas = np.array([[0, 0]])
+                for i in range(1, int(b_max / b_min / 2) + 1):
+                    self.pos_antennas = np.append(self.pos_antennas, [[i * b_min, 0], [-i * b_min, 0]], axis=0)
+                for i in range(1, int(b_max / b_min / 2) + 1):
+                    self.pos_antennas = np.append(self.pos_antennas, [[0, -i * b_min]], axis=0)
+            case 'Y':
+                if n_antennas is not None:
+                    print(f'Warning: n_antennas is ignored for "{geometry}" geometry.')
+                self.pos_antennas = np.array([[0, 0]])
+                for i in range(1, int(b_max / b_min / 2) + 1):
+                    self.pos_antennas = np.append(
+                        self.pos_antennas,
+                        [
+                            [
+                                i * b_min * np.cos(np.pi / 6),
+                                i * b_min * np.sin(np.pi / 6)
+                            ],
+                            [
+                                i * b_min * np.cos(5 * np.pi / 6),
+                                i * b_min * np.sin(5 * np.pi / 6)
+                            ],
+                            [
+                                0,
+                                -i * b_min
+                            ]
+                        ],
+                        axis=0
+                    )
+            case 'circle':
+                self.pos_antennas = np.array(
+                    [
+                        [
+                            np.cos(2 * np.pi * i / n_antennas),
+                            np.sin(2 * np.pi * i / n_antennas)
+                        ] for i in range(n_antennas)
+                    ]
+                )
+            case _:
+                raise NotImplementedError
         # Construct uv coverage
         uv_coverage = []
-        for i in range(n_antennas):
-            for j in range(n_antennas):
+        for i in range(len(self.pos_antennas)):
+            for j in range(len(self.pos_antennas)):
                 if i == j:
                     continue
                 u = self.pos_antennas[i, 0] - self.pos_antennas[j, 0]
