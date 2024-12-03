@@ -9,27 +9,29 @@ from CLEAN import CLEAN
 if __name__ == '__main__':
     clean = CLEAN()
     imagefile = './example/image/structure.png'
-    # maskfile = './image/structure_mask.png'
-    maskfile = None
+    maskfile = './example/image/structure_mask.png'
+    # maskfile = None
 
     # Set antenna array
-    antenna_pos, uv_coverage = clean.set_antenna_array('random', 40, b_min=0.01, random_seed=0, Nt=4, theta=np.pi / 4)
+    antenna_pos, uv_coverage = clean.set_antenna_array('random', 8, b_min=0.01, random_seed=0, Nt=16, theta=np.pi / 4)
 
     # Plot antenna positions and uv coverage
-    # fig, axs = plt.subplots(1, 2, figsize=(12, 6))
-    # for ax in axs:
-    #     ax.set_aspect('equal', 'box')
-    # axs[0].scatter(antenna_pos[:, 0], antenna_pos[:, 1])
-    # axs[0].set_title('Antenna Positions')
-    # axs[1].scatter(uv_coverage[:, 0], uv_coverage[:, 1])
-    # axs[1].set_title('UV Coverage')
-    # plt.show()
+    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+    for ax in axs:
+        ax.set_aspect('equal', 'box')
+    axs[0].scatter(antenna_pos[:, 0], antenna_pos[:, 1])
+    axs[0].set_title('Antenna Positions')
+    axs[1].scatter(uv_coverage[:, 0], uv_coverage[:, 1])
+    axs[1].set_title('UV Coverage')
+    axs[1].set_xlim(-0.5, 0.5)
+    axs[1].set_ylim(-0.5, 0.5)
+    plt.show()
 
     # Create visibility
     vis, imsize = clean.create_visibility(imagefile)
 
     # Clean the image
-    psf, model, residual, image = clean.clean(vis, imsize, 'uniform', n_iter=0, threshold=1e-16, mask=maskfile, gamma=0.2)
+    psf, model, residual, image = clean.clean(vis, imsize, 'uniform', n_iter=10000, threshold=1e-16, mask=maskfile, gamma=0.2)
 
     # Load the original image (true image)
     true_image = cv.imread(imagefile, cv.IMREAD_GRAYSCALE)
