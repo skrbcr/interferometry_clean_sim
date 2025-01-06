@@ -10,18 +10,20 @@ class CLEAN:
         self.pos_antennas = None
         self.uv_coverage = None
 
-    def set_antenna_array(self, geometry, n_antennas, b_min=None, b_max=None, theta=None, dt=None, Nt=1, random_seed=1):
+    def set_antenna_array(self, geometry, n_antennas=8, b_min=None, b_max=None, lattitude=0, declination=np.pi / 4, H_0=0, dt=np.pi / 12, Nt=1, random_seed=1):
         """
         Configure the antenna array.
 
         Args:
             geometry (str): geometry of the antenna array. Currently only 'random' is supported.
-            n_antennas (int): number of antennas.
+            n_antennas (int): number of antennas. Default is 8.
             b_min (float): minimum baseline length.
-            b_max (float): maximum baseline length. This should be less than 0.5.
-            theta (float): declination angle of the target in radians.
-            dt (float): time interval between measurements in radians (2\\pi means 24 hours).
-            Nt (int): number of time steps.
+            b_max (float): maximum baseline length.
+            lattitude (float): lattitude angle of observer in radians. Default is 0.
+            declination (float): declination angle of the target in radians. Default is \\pi / 4.
+            H_0 (float): hour angle of the target in radians at the first time step. Default is 0.
+            dt (float): time interval between measurements in radians (2\\pi means 24 hours). Default is \\pi / 12.
+            Nt (int): number of time steps. Default is 1.
             random_seed (int): random seed for random number generation.
 
         Returns:
@@ -32,8 +34,6 @@ class CLEAN:
         if n_antennas < 2:
             raise ValueError('At least 2 antennas are required.')
         # Generate antenna configuration
-        if n_antennas is None:
-            n_antennas = 8
         if b_min is None and b_max is None:
             b_min = 0.1
             b_max = 0.5
@@ -41,6 +41,9 @@ class CLEAN:
             b_min = b_max * 0.2
         if b_max is None:
             b_max = 5 * b_min
+        if Nt < 1:
+            Nt = 1
+            print('Warning: Nt is set to less than 1. Nt is set to 1.')
         match geometry:
             case 'random':
                 pds = _PoissonDiskSampling(b_min, b_max, random_seed)
@@ -94,6 +97,29 @@ class CLEAN:
                         ],
                         axis=0
                     )
+            case 'Y-inclined':
+                if n_antennas is not None:
+                    print(f'Warning: n_antennas is ignored for "{geometry}" geometry.')
+                self.pos_antennas = np.array([[0, 0]])
+                for i in range(1, int(b_max / b_min / 2) + 1):
+                    self.pos_antennas = np.append(
+                        self.pos_antennas,
+                        [
+                            [
+                                i * b_min * np.cos(np.pi / 6),
+                                i * b_min * np.sin(np.pi / 6)
+                            ],
+                            [
+                                i * b_min * np.cos(5 * np.pi / 6),
+                                i * b_min * np.sin(5 * np.pi / 6)
+                            ],
+                            [
+                                i * b_min * np.cos(3 * np.pi / 2 + np.pi / 180 * 5),
+                                i * b_min * np.sin(3 * np.pi / 2 + np.pi / 180 * 5)
+                            ]
+                        ],
+                        axis=0
+                    )
             case 'circle':
                 self.pos_antennas = np.array(
                     [
@@ -105,32 +131,44 @@ class CLEAN:
                 )
             case _:
                 raise NotImplementedError
+        # Add Z coordinate to self.pos_antennas
+        pos_antennas_with_z = []
+        rot_y = np.array([
+            [ np.cos(lattitude), 0, np.sin(lattitude) ],
+            [ 0, 1, 0 ],
+            [ -np.sin(lattitude), 0, np.cos(lattitude) ]
+        ])
+        for pos in self.pos_antennas:
+            pos_antennas_with_z.append(rot_y @ np.array([pos[0], pos[1], 0]))
+        self.pos_antennas = np.array(pos_antennas_with_z)
+
         # Construct uv coverage
-        uv_coverage = []
+        xyz = []
         for i in range(len(self.pos_antennas)):
             for j in range(len(self.pos_antennas)):
                 if i == j:
                     continue
-                u = self.pos_antennas[i, 0] - self.pos_antennas[j, 0]
-                v = self.pos_antennas[i, 1] - self.pos_antennas[j, 1]
-                uv_coverage.append((u, v))
+                x = self.pos_antennas[i, 0] - self.pos_antennas[j, 0]
+                y = self.pos_antennas[i, 1] - self.pos_antennas[j, 1]
+                z = self.pos_antennas[i, 2] - self.pos_antennas[j, 2]
+                xyz.append((x, y, z))
 
-        # Time evolution of the antenna configuration
-        uv_coverage_add = []
-        if theta is None:
-            theta = np.pi / 2
-        if dt is None:
-            dt = np.pi / 12
-        for u, v in uv_coverage:
-            a = np.sqrt(u ** 2 + v ** 2 / np.sin(theta) ** 2)
-            b = a * np.sin(theta)
-            t0 = np.arctan2(v, u)
-            for i in range(1, Nt):
-                u_new = a * np.cos(i * dt + t0)
-                v_new = b * np.sin(i * dt + t0)
-                uv_coverage_add.append((u_new, v_new))
+        def xyz_to_uvw(H: float, delta: float, xyz: np.ndarray) -> np.ndarray:
+            matrix_rot = np.array([
+                [ np.sin(H), np.cos(H), 0],
+                [ -np.sin(delta) * np.cos(H), np.sin(delta) * np.sin(H), np.cos(delta)],
+                [ np.cos(delta) * np.cos(H), -np.cos(delta) * np.sin(H), np.sin(delta)]
+            ])
+            return matrix_rot @ xyz
 
-        self.uv_coverage = np.array(uv_coverage + uv_coverage_add)
+        uv_coverage = []
+        for x, y, z in xyz:
+            for i in range(Nt):
+                uvw = xyz_to_uvw(i * dt + H_0, declination, np.array([x, y, z]))
+                # print(uvw)
+                uv_coverage.append((uvw[0], uvw[1]))
+
+        self.uv_coverage = np.array(uv_coverage)
 
         return self.pos_antennas.copy(), self.uv_coverage.copy()
 
