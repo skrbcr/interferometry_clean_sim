@@ -251,6 +251,9 @@ class CLEAN:
         # Load image as grayscale
         image = cv.imread(imagefile, cv.IMREAD_GRAYSCALE)
 
+        if image is None:
+            raise FileNotFoundError(f'File "{imagefile}" not found.')
+
         # If the image is not square, crop it to a square
         if image.shape[0] != image.shape[1]:
             print('Warning: This program only supports square images for now. Cropping the image to a square.')
@@ -287,7 +290,7 @@ class CLEAN:
             beamed_image *= max_value / beamed_image[max_index]
         return beamed_image
 
-    def clean(self, vis, imsize, weighting, robust=0.5, n_iter=0, threshold=0.1, mask=None, gamma=0.2):
+    def clean(self, vis, imsize, weighting, robust=0.5, n_iter=0, threshold=0.1, mask=None, gamma=0.2, clean_object=None):
         """
         Clean the image.
 
@@ -300,21 +303,30 @@ class CLEAN:
             threshold (float): threshold for stopping the iteration.
             mask (str): path to the mask file.
             gamma (float): loop gain.
+            object : return object by previous call.
 
         Returns:
-            tuple: A tuple containing:
+            map: A map containing:
                 - psf (np.ndarray): PSF.
-                - model (np.ndarray): model image.
-                - residual (np.ndarray): residual image.
+                - model (np.ndarray): model.
+                - residual (np.ndarray): residual.
                 - image (np.ndarray): cleaned image.
+                - iter (int): number of iterations.
         """
-        # Create the PSF
-        psf = self.create_psf(imsize, weighting, robust)
+        if clean_object:
+            psf = clean_object['psf']
+            model = clean_object['model']
+            residual = clean_object['residual']
+            i_iter = clean_object['iter'] + 1
+        else:
+            # Create the PSF
+            psf = self.create_psf(imsize, weighting, robust)
 
-        # Initialize the model and residual
-        model = np.zeros((imsize, imsize), dtype=float)
-        uv_grid = self.weight_uv_coverage(imsize, weighting, robust)
-        residual = np.fft.ifft2(np.fft.ifftshift(vis * uv_grid)).real
+            # Initialize the model and residual
+            model = np.zeros((imsize, imsize), dtype=float)
+            uv_grid = self.weight_uv_coverage(imsize, weighting, robust)
+            residual = np.fft.ifft2(np.fft.ifftshift(vis * uv_grid)).real
+            i_iter = 0
 
         # mask
         if mask is not None:
@@ -328,25 +340,23 @@ class CLEAN:
             mask = np.ones((imsize, imsize))
 
         # Iterate
-        if n_iter <= 0:
-            print('Warning: n_iter is set to less than 1. I will restore the dirty image.')
-        else:
-            for i in range(n_iter):
-                # Find the peak in the residual
-                peak = np.unravel_index(np.argmax(np.abs(residual * mask)), residual.shape)
-                value = residual[peak]
-                if np.abs(value) < threshold:
-                    print(f'Iteration {i + 1}: Peak value {value} is below threshold {threshold}. Stopping the iteration.')
-                    break
-                value *= gamma
-                # Add the peak to the model
-                model[peak] += value
-                # Shift the PSF to the peak
-                shifted_psf = np.roll(np.roll(psf, peak[0] - imsize // 2, axis=0), peak[1] - imsize // 2, axis=1)
-                # Subtract the peak from the residual
-                residual -= shifted_psf * value
-                if i == n_iter - 1:
-                    print(f'Maximum number of iterations {n_iter} reached.')
+        i = i_iter - 1
+        for i in range(i_iter, n_iter):
+            # Find the peak in the residual
+            peak = np.unravel_index(np.argmax(np.abs(residual * mask)), residual.shape)
+            value = residual[peak]
+            if np.abs(value) < threshold:
+                print(f'Iteration {i + 1}: Peak value {value} is below threshold {threshold}. Stopping the iteration.')
+                break
+            value *= gamma
+            # Add the peak to the model
+            model[peak] += value
+            # Shift the PSF to the peak
+            shifted_psf = np.roll(np.roll(psf, peak[0] - imsize // 2, axis=0), peak[1] - imsize // 2, axis=1)
+            # Subtract the peak from the residual
+            residual -= shifted_psf * value
+            if i == n_iter - 1:
+                print(f'Maximum number of iterations {n_iter} reached.')
 
         # Calculate synthesized beam
         sigma_x, sigma_y, theta = _fit_psf_gaussian(psf)
@@ -354,4 +364,12 @@ class CLEAN:
         # Create image from model and residual
         image = self.get_synthesized_beamed_image(model, psf) + residual
 
-        return psf, model, residual, image
+        ret = {
+            'psf': psf,
+            'model': model,
+            'residual': residual,
+            'image': image,
+            'iter': i,
+        }
+
+        return ret
